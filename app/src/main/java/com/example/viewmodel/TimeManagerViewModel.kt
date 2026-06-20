@@ -165,6 +165,76 @@ class TimeManagerViewModel(private val repository: SessionRepository) : ViewMode
             repository.clearAll()
         }
     }
+
+    // --- Google Schedule Layout Planners ---
+    fun logPlannedSession(category: String, durationMinutes: Int, note: String, dateOffsetDays: Int, hourOfDay: Int) {
+        val calendar = Calendar.getInstance()
+        calendar.add(Calendar.DAY_OF_YEAR, dateOffsetDays)
+        calendar.set(Calendar.HOUR_OF_DAY, hourOfDay)
+        calendar.set(Calendar.MINUTE, 0)
+        calendar.set(Calendar.SECOND, 0)
+        calendar.set(Calendar.MILLISECOND, 0)
+        
+        val plannedSession = FocusSession(
+            category = category,
+            durationSeconds = -durationMinutes * 60, // Negative duration flags a planned/scheduled item
+            note = note.ifBlank { "待完成计划" },
+            timestamp = calendar.timeInMillis
+        )
+        viewModelScope.launch {
+            repository.insert(plannedSession)
+        }
+    }
+
+    fun completePlannedSession(session: FocusSession) {
+        val completedSession = session.copy(
+            durationSeconds = kotlin.math.abs(session.durationSeconds), // turn positive representing completion
+            timestamp = System.currentTimeMillis() // tag completion as today
+        )
+        viewModelScope.launch {
+            repository.insert(completedSession)
+            lastCompletedSessionDuration = completedSession.durationSeconds
+            showCelebrationDialog = true
+        }
+    }
+
+    fun populateDemoPlans() {
+        viewModelScope.launch {
+            // Check if there are already sessions
+            val currentList = allSessions.value
+            if (currentList.isEmpty()) {
+                // Prepopulate 3 lovely plans for today to give Google Schedule style immediate live content
+                logPlannedSession(
+                    category = "工作",
+                    durationMinutes = 45,
+                    note = "UI 设计与原型探索",
+                    dateOffsetDays = 0,
+                    hourOfDay = 9
+                )
+                logPlannedSession(
+                    category = "运动",
+                    durationMinutes = 30,
+                    note = "每日有氧激活拉伸",
+                    dateOffsetDays = 0,
+                    hourOfDay = 14
+                )
+                logPlannedSession(
+                    category = "学习",
+                    durationMinutes = 40,
+                    note = "深入阅读一个技术章节",
+                    dateOffsetDays = 0,
+                    hourOfDay = 19
+                )
+                logPlannedSession(
+                    category = "生活",
+                    durationMinutes = 15,
+                    note = "冲煮一杯精品手冲咖啡",
+                    dateOffsetDays = 0,
+                    hourOfDay = 16
+                )
+            }
+        }
+    }
 }
 
 // Factory class to instantiate ViewModel with dependency
