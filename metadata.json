@@ -1,0 +1,6 @@
+{
+  "name": "时间管理器",
+  "description": "一款精致、高效的时间管理器，包含专注计时器和每日时间统计，助您告别拖延症。",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
